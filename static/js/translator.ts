@@ -93,12 +93,17 @@ Translator.prototype.pushDict = function (value: string, dict: any) {
   const chunks = Translator.prototype.explodeChain(value)
   // dict['0'] = '0'
   const key = chunks[0]
-  if (key) {
-    // check if string
-    if (chunks[1].length >= 3) {
-      // get value
+  // check if string
+  if (key && typeof key === 'string') {
+    // check this key is greater than the last one :) -> flagAppend
+    let flagAppend = true
+    const keys = Object.keys(dict)
+    if (keys.length && keys[keys.length - 1] > key) {
+      flagAppend = false
+    }
+    if (flagAppend && chunks[1].length >= 3) {
+      // get the value
       const valChunks = Translator.prototype.explodeChain(chunks[1])
-      // check this key is greater than the last one :)
       dict[key] = valChunks[0]
       Translator.prototype.pushDict(valChunks[1], dict)
     }

@@ -28,10 +28,9 @@ describe('translator', () => {
   })
 
   test('is translating dictionary', () => {
-    expect(Translator.convert('d3:bar4:spam3:fooi42ee')).toEqual([
-      'spam',
-      -45,
-      ['book'],
-    ])
+    expect(Translator.convert('d3:bar4:spam3:fooi42ee')).toEqual({
+      bar: 'spam',
+      foo: 42,
+    })
   })
 })
