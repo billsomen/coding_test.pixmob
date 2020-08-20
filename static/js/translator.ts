@@ -6,27 +6,33 @@ const TYPE_NUMBER = 'number'
 const TYPE_LIST = 'list'
 const TYPE_DICT = 'dict'
 const TYPE_STRING = 'string'
+
 const DEFAULT_END_DELIMITER = 'e'
+const STRING_DELIMITER = ':'
+
+const NUMBER_START_DELIMITER = 'i'
+const LIST_START_DELIMITER = 'I'
+const DICT_START_DELIMITER = 'd'
 
 Translator.prototype.getType = (value: string): string => {
   let type = TYPE_UNKNOWN
   const firstChar = value.charAt(0)
   const lastChar = value.charAt(value.length - 1)
-  if (lastChar === 'e') {
+  if (lastChar === DEFAULT_END_DELIMITER) {
     switch (firstChar) {
-      case 'i':
+      case NUMBER_START_DELIMITER:
         type = TYPE_NUMBER
         break
-      case 'I':
+      case LIST_START_DELIMITER:
         type = TYPE_LIST
         break
-      case 'd':
+      case DICT_START_DELIMITER:
         type = TYPE_DICT
         break
     }
   }
   if (type === TYPE_UNKNOWN && /[0-9]/.test(firstChar)) {
-    const splits: any = value.split(':')
+    const splits: any = value.split(STRING_DELIMITER)
     if (+splits[0] === splits[1].length) {
       type = TYPE_STRING
     }
@@ -36,7 +42,6 @@ Translator.prototype.getType = (value: string): string => {
 
 Translator.prototype.convert = function (value: string) {
   const type: string = this.getType(value)
-  // console.dir(type)
   return this.translateFacade(value, type)
 }
 
@@ -52,7 +57,7 @@ Translator.prototype.translateFacade = (value: string, type: string): any => {
       }
       break
     case TYPE_STRING:
-      result = value.split(':')[1]
+      result = value.split(STRING_DELIMITER)[1]
       break
     case TYPE_LIST:
       result = Translator.prototype.translateList(value)
@@ -104,6 +109,9 @@ Translator.prototype.pushDict = function (value: string, dict: any) {
     if (flagAppend && chunks[1].length >= 3) {
       // get the value
       const valChunks = Translator.prototype.explodeChain(chunks[1])
+      console.dir(chunks[1])
+      // console.dir(Translator.prototype.convert(chunks[1]))
+      console.dir(valChunks)
       dict[key] = valChunks[0]
       Translator.prototype.pushDict(valChunks[1], dict)
     }
@@ -131,9 +139,42 @@ Translator.prototype.explodeString = (value: string): string[] => {
   return [str, rest]
 }
 
-Translator.prototype.explodeOther = (value: string): (number | string)[] => {
+Translator.prototype.explodeNumber = (value: string): (number | string)[] => {
   const endDelimiterId = value.indexOf(DEFAULT_END_DELIMITER)
   const startDelimiterId = value.charAt(0)
+  let str = value.substr(1, endDelimiterId - 1)
+  const rest = value.slice(str.length + 2)
+
+  str = Translator.prototype.convert(
+    `${startDelimiterId}${str}${DEFAULT_END_DELIMITER}`
+  )
+  return [str, rest]
+}
+
+Translator.prototype.explodeOther = (value: string): (number | string)[] => {
+  // list or dict, we fetch the end of the
+  const endDelimiterId = value.indexOf(DEFAULT_END_DELIMITER)
+  const startDelimiterId = value.charAt(0)
+  let str = value.substr(1, endDelimiterId - 1)
+  const rest = value.slice(str.length + 2)
+
+  str = Translator.prototype.convert(
+    `${startDelimiterId}${str}${DEFAULT_END_DELIMITER}`
+  )
+  return [str, rest]
+}
+
+Translator.prototype.explodeDict = (value: string): (number | string)[] => {
+  // list or dict, we fetch the end of the
+  const endDelimiterId = value.indexOf(DEFAULT_END_DELIMITER)
+  const startDelimiterId = value.charAt(0)
+  if (startDelimiterId === '{') {
+    //  its a dict
+    const delKey = value.indexOf('&') + 1
+    let str = value.substr(1, delKey)
+    const rest = value.slice(str.length + 2)
+  }
+
   let str = value.substr(1, endDelimiterId - 1)
   const rest = value.slice(str.length + 2)
 
